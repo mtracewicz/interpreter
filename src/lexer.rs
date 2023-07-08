@@ -124,6 +124,9 @@ mod tests {
                 x+y;
             };
             let result = add(five,ten);
+
+            !-/*5;
+            5 < 10 > 5;
             ",
         );
         let mut lexer = Lexer::new(input);
@@ -163,6 +166,18 @@ mod tests {
             Token::Comma,
             Token::Identifier(String::from("ten")),
             Token::RightParenthesis,
+            Token::Semicolon,
+            Token::Bang,
+            Token::Minus,
+            Token::Slash,
+            Token::Asterisk,
+            Token::Integer(String::from("5")),
+            Token::Semicolon,
+            Token::Integer(String::from("5")),
+            Token::LessThen,
+            Token::Integer(String::from("10")),
+            Token::GreaterThen,
+            Token::Integer(String::from("5")),
             Token::Semicolon,
             Token::EOF,
         ];
