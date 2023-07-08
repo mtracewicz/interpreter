@@ -4,7 +4,7 @@ use std::usize;
 pub enum Token {
     Illegal,
     EOF,
-    Identifier,
+    Identifier(String),
     Integer(String),
     Assign,
     Plus,
@@ -70,17 +70,55 @@ mod tests {
 
     #[test]
     fn test_next_token() {
-        let input = String::from("=+(){},;");
+        let input = String::from(
+            "let five = 5;
+            let ten = 10;
+
+            let add = fn(x,y){
+                x+y;
+            };
+            let result = add(five,ten);
+            ",
+        );
         let mut lexer = Lexer::new(input);
         let expected_tokens = [
+            Token::Let,
+            Token::Identifier(String::from("five")),
             Token::Assign,
-            Token::Plus,
+            Token::Integer(String::from("5")),
+            Token::Semicolon,
+            Token::Let,
+            Token::Identifier(String::from("ten")),
+            Token::Assign,
+            Token::Integer(String::from("10")),
+            Token::Semicolon,
+            Token::Let,
+            Token::Identifier(String::from("add")),
+            Token::Assign,
+            Token::Function,
             Token::LeftParenthesis,
+            Token::Identifier(String::from("x")),
+            Token::Comma,
+            Token::Identifier(String::from("y")),
             Token::RightParenthesis,
             Token::LeftBrace,
-            Token::RightBrace,
-            Token::Comma,
+            Token::Identifier(String::from("x")),
+            Token::Plus,
+            Token::Identifier(String::from("y")),
             Token::Semicolon,
+            Token::RightBrace,
+            Token::Semicolon,
+            Token::Let,
+            Token::Identifier(String::from("result")),
+            Token::Assign,
+            Token::Identifier(String::from("add")),
+            Token::LeftParenthesis,
+            Token::Identifier(String::from("five")),
+            Token::Comma,
+            Token::Identifier(String::from("ten")),
+            Token::RightParenthesis,
+            Token::Semicolon,
+            Token::EOF,
         ];
 
         for token in expected_tokens.into_iter() {
