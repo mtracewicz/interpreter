@@ -38,6 +38,7 @@ impl Lexer {
     }
 
     pub fn next_token(&mut self) -> Token {
+        self.skip_whitespace();
         let token = match self.ch {
             b'=' => Token::Assign,
             b'+' => Token::Plus,
@@ -47,10 +48,35 @@ impl Lexer {
             b'}' => Token::RightBrace,
             b',' => Token::Comma,
             b';' => Token::Semicolon,
-            _ => Token::EOF,
+            b'a'..=b'z' | b'A'..=b'Z' | b'_' => return self.read_identifier(),
+            b'0'..=b'9' => return self.read_integer(),
+            0 => Token::EOF,
+            _ => Token::Illegal,
         };
         self.read_char();
         return token;
+    }
+
+    fn read_identifier(&mut self) -> Token {
+        let position = self.position;
+        while self.ch.is_ascii_alphabetic() || self.ch == b'_' {
+            self.read_char();
+        }
+        let identifier = String::from_utf8_lossy(&self.input[position..self.position]).to_string();
+        return match identifier.as_str() {
+            "let" => Token::Let,
+            "fn" => Token::Function,
+            _ => Token::Identifier(identifier),
+        };
+    }
+
+    fn read_integer(&mut self) -> Token {
+        let position = self.position;
+        while self.ch.is_ascii_digit() {
+            self.read_char();
+        }
+        let number = String::from_utf8_lossy(&self.input[position..self.position]).to_string();
+        return Token::Integer(number);
     }
 
     fn read_char(&mut self) {
@@ -61,6 +87,12 @@ impl Lexer {
         }
         self.position = self.read_position;
         self.read_position += 1;
+    }
+
+    fn skip_whitespace(&mut self) {
+        while self.ch == b' ' || self.ch == b'\t' || self.ch == b'\n' || self.ch == b'\r' {
+            self.read_char();
+        }
     }
 }
 
