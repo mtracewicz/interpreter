@@ -1,5 +1,6 @@
 use std::usize;
 
+#[allow(dead_code)]
 #[derive(Debug, PartialEq)]
 pub enum Token {
     Illegal,
@@ -16,6 +17,19 @@ pub enum Token {
     RightBrace,
     Function,
     Let,
+    Minus,
+    Bang,
+    Asterisk,
+    Slash,
+    LessThen,
+    GreaterThen,
+    True,
+    False,
+    If,
+    Else,
+    Return,
+    Equal,
+    NotEqual,
 }
 
 pub struct Lexer {
