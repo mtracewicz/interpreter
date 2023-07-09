@@ -1,5 +1,6 @@
 mod ast;
 mod lexer;
+mod parser;
 use std::{io::Write, process::exit};
 
 use crate::lexer::{Lexer, Token};
