@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use crate::ast::{Expression, Program, Statment};
+use crate::ast::{Expression, Precedence, Program, Statment};
 use crate::lexer::{Lexer, Token};
 
 pub struct Parser {
@@ -8,8 +6,6 @@ pub struct Parser {
     current_token: Token,
     peek_token: Token,
     parsing_errors: Vec<ParsingError>,
-    prefix_parse_functions: HashMap<Token, PrefixParserFn>,
-    infix_parse_functions: HashMap<Token, InfixParsern>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -27,8 +23,6 @@ impl Parser {
             current_token: Token::Illegal,
             peek_token: Token::Illegal,
             parsing_errors: vec![],
-            prefix_parse_functions: HashMap::new(),
-            infix_parse_functions: HashMap::new(),
         };
         parser.next_token();
         parser.next_token();
@@ -50,7 +44,7 @@ impl Parser {
         match self.current_token {
             Token::Let => self.parse_let_statment(),
             Token::Return => self.parse_return_statment(),
-            _ => None,
+            _ => self.parse_expression_statement(),
         }
     }
 
@@ -88,6 +82,42 @@ impl Parser {
 
         Some(Statment::Return(Expression::IntegerLiteral(literal)))
     }
+
+    fn parse_expression_statement(&mut self) -> Option<Statment> {
+        let expression = self.parse_expression(Precedence::Lowest);
+        if self.peek_token == Token::Semicolon {
+            self.next_token();
+        }
+        if let Some(exp) = expression {
+            Some(Statment::Expression(exp))
+        } else {
+            None
+        }
+    }
+
+    fn parse_expression(&mut self, precedence: Precedence) -> Option<Expression> {
+        if let Some(prefix) = self.prefix_parse_functions() {
+            Some(prefix(self))
+        } else {
+            None
+        }
+    }
+
+    fn prefix_parse_functions(&self) -> Option<PrefixParserFn> {
+        match &self.current_token {
+            Token::Identifier(_name) => Some(Parser::parse_identifier),
+            _ => None,
+        }
+    }
+
+    fn parse_identifier(&mut self) -> Expression {
+        if let Token::Identifier(name) = self.current_token.clone() {
+            Expression::Identifier(name)
+        } else {
+            panic!("Parse identifier called not on an identifier")
+        }
+    }
+
     fn expect_token(&mut self, t: Token) -> bool {
         if self.peek_token == t {
             self.next_token();

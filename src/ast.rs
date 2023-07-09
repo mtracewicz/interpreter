@@ -12,6 +12,16 @@ pub enum Expression {
     Identifier(String),
 }
 
+pub enum Precedence {
+    Lowest,
+    Equal,
+    LesserGreater,
+    Sum,
+    Product,
+    Prefix,
+    Call,
+}
+
 pub struct Program {
     pub statments: Vec<Statment>,
 }
