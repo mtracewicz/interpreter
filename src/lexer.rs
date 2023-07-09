@@ -138,6 +138,15 @@ mod tests {
 
             !-/*5;
             5 < 10 > 5;
+
+            if (5 < 10) {
+                return true;
+            } else {
+                return false;
+            }
+
+            10 == 10;
+            10 != 9;
             ",
         );
         let mut lexer = Lexer::new(input);
@@ -189,6 +198,31 @@ mod tests {
             Token::Integer(String::from("10")),
             Token::GreaterThen,
             Token::Integer(String::from("5")),
+            Token::Semicolon,
+            Token::If,
+            Token::LeftParenthesis,
+            Token::Integer(String::from("5")),
+            Token::LessThen,
+            Token::Integer(String::from("10")),
+            Token::RightParenthesis,
+            Token::LeftBrace,
+            Token::Return,
+            Token::True,
+            Token::Semicolon,
+            Token::RightBrace,
+            Token::Else,
+            Token::LeftBrace,
+            Token::Return,
+            Token::False,
+            Token::Semicolon,
+            Token::RightBrace,
+            Token::Integer(String::from("10")),
+            Token::Equal,
+            Token::Integer(String::from("10")),
+            Token::Semicolon,
+            Token::Integer(String::from("10")),
+            Token::NotEqual,
+            Token::Integer(String::from("9")),
             Token::Semicolon,
             Token::EOF,
         ];
