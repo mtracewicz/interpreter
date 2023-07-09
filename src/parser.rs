@@ -107,6 +107,7 @@ impl Parser {
         match &self.current_token {
             Token::Identifier(_name) => Some(Parser::parse_identifier),
             Token::Integer(_) => Some(Parser::parse_integer_literal),
+            Token::Bang | Token::Minus => Some(Parser::parse_prefix_expression),
             _ => None,
         }
     }
@@ -124,6 +125,20 @@ impl Parser {
             Expression::IntegerLiteral(value.parse::<i32>().unwrap())
         } else {
             panic!("Parse identifier called not on an identifier")
+        }
+    }
+
+    fn parse_prefix_expression(&mut self) -> Expression {
+        let operator = if let Token::Bang = self.current_token {
+            String::from("!")
+        } else {
+            String::from('-')
+        };
+        self.next_token();
+        if let Some(exp) = self.parse_expression(Precedence::Prefix) {
+            Expression::Prefix(operator, Box::new(exp))
+        } else {
+            panic!("Cound not construct an expresion for a prefix operator");
         }
     }
 
