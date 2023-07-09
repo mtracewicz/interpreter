@@ -51,7 +51,7 @@ impl Lexer {
         return lex;
     }
 
-    pub fn next_token(&mut self) -> Token {
+    pub fn next_token(&mut self) -> Result<Token, Token> {
         self.skip_whitespace();
         let token = match self.ch {
             b'=' => {
@@ -82,13 +82,13 @@ impl Lexer {
             }
             b'*' => Token::Asterisk,
             b'/' => Token::Slash,
-            b'a'..=b'z' | b'A'..=b'Z' | b'_' => return self.read_identifier(),
-            b'0'..=b'9' => return self.read_integer(),
+            b'a'..=b'z' | b'A'..=b'Z' | b'_' => return Ok(self.read_identifier()),
+            b'0'..=b'9' => return Ok(self.read_integer()),
             0 => Token::EOF,
-            _ => Token::Illegal,
+            _ => return Err(Token::Illegal),
         };
         self.read_char();
-        return token;
+        return Ok(token);
     }
 
     fn read_identifier(&mut self) -> Token {
@@ -250,7 +250,7 @@ mod tests {
         ];
 
         for token in expected_tokens.into_iter() {
-            assert_eq!(token, lexer.next_token());
+            assert_eq!(token, lexer.next_token().unwrap());
         }
     }
 }
