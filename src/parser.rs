@@ -106,6 +106,7 @@ impl Parser {
     fn prefix_parse_functions(&self) -> Option<PrefixParserFn> {
         match &self.current_token {
             Token::Identifier(_name) => Some(Parser::parse_identifier),
+            Token::Integer(_) => Some(Parser::parse_integer_literal),
             _ => None,
         }
     }
@@ -113,6 +114,14 @@ impl Parser {
     fn parse_identifier(&mut self) -> Expression {
         if let Token::Identifier(name) = self.current_token.clone() {
             Expression::Identifier(name)
+        } else {
+            panic!("Parse identifier called not on an identifier")
+        }
+    }
+
+    fn parse_integer_literal(&mut self) -> Expression {
+        if let Token::Integer(value) = self.current_token.clone() {
+            Expression::IntegerLiteral(value.parse::<i32>().unwrap())
         } else {
             panic!("Parse identifier called not on an identifier")
         }
@@ -189,6 +198,24 @@ mod tests {
         if let Statment::Expression(exp) = statment {
             if let Expression::Identifier(name) = exp {
                 assert_eq!("foobar", name);
+            }
+        } else {
+            panic!("Not an expression!");
+        }
+    }
+
+    #[test]
+    fn test_integer_literal_parser() {
+        let input = "5;";
+        let lexer = Lexer::new(String::from(input));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(0, parser.parsing_errors.len());
+        assert_eq!(1, program.statments.len());
+        let statment = program.statments.first().unwrap().clone();
+        if let Statment::Expression(exp) = statment {
+            if let Expression::IntegerLiteral(value) = exp {
+                assert_eq!(5, *value);
             }
         } else {
             panic!("Not an expression!");
