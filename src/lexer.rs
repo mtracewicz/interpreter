@@ -54,7 +54,14 @@ impl Lexer {
     pub fn next_token(&mut self) -> Token {
         self.skip_whitespace();
         let token = match self.ch {
-            b'=' => Token::Assign,
+            b'=' => {
+                if self.peak_char() == b'=' {
+                    self.read_char();
+                    Token::Equal
+                } else {
+                    Token::Assign
+                }
+            }
             b'+' => Token::Plus,
             b'(' => Token::LeftParenthesis,
             b')' => Token::RightParenthesis,
@@ -65,7 +72,14 @@ impl Lexer {
             b'<' => Token::LessThen,
             b'>' => Token::GreaterThen,
             b'-' => Token::Minus,
-            b'!' => Token::Bang,
+            b'!' => {
+                if self.peak_char() == b'=' {
+                    self.read_char();
+                    Token::NotEqual
+                } else {
+                    Token::Bang
+                }
+            }
             b'*' => Token::Asterisk,
             b'/' => Token::Slash,
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => return self.read_identifier(),
@@ -93,6 +107,14 @@ impl Lexer {
             "else" => Token::Else,
             _ => Token::Identifier(identifier),
         };
+    }
+
+    fn peak_char(&self) -> u8 {
+        if self.read_position >= self.input.len() {
+            return 0;
+        } else {
+            return self.input[self.read_position];
+        }
     }
 
     fn read_integer(&mut self) -> Token {
