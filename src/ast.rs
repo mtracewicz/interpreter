@@ -2,8 +2,10 @@ use crate::lexer::{Lexer, Token};
 
 pub enum Statment {
     Let(String, Expression),
+    Return(Expression),
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     IntegerLiteral(i32),
 }
@@ -52,6 +54,7 @@ impl Parser {
     fn parse_statment(&mut self) -> Option<Statment> {
         match self.current_token {
             Token::Let => self.parse_let_statment(),
+            Token::Return => self.parse_return_statment(),
             _ => None,
         }
     }
@@ -79,6 +82,17 @@ impl Parser {
         Some(Statment::Let(name, Expression::IntegerLiteral(5)))
     }
 
+    fn parse_return_statment(&mut self) -> Option<Statment> {
+        let literal = match self.peek_token.clone() {
+            Token::Integer(i) => i.parse::<i32>().unwrap(),
+            _ => 0,
+        };
+        while self.current_token != Token::Semicolon && self.current_token != Token::EOF {
+            self.next_token();
+        }
+
+        Some(Statment::Return(Expression::IntegerLiteral(literal)))
+    }
     fn expect_token(&mut self, t: Token) -> bool {
         if self.peek_token == t {
             self.next_token();
@@ -99,7 +113,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parser() {
+    fn test_let_parser() {
         let input = "
         let x = 5;
         let y = 10;
@@ -113,6 +127,28 @@ mod tests {
         for (i, identifier) in expected_identifiers.iter().enumerate() {
             let statment = &program.statments[i];
             test_let_statment(identifier, statment);
+        }
+    }
+
+    #[test]
+    fn test_return_parser() {
+        let input = "
+        return 0;
+        return 128;
+        return 5;";
+
+        let lexer = Lexer::new(String::from(input));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(3, program.statments.len());
+        let expected_expressions = [
+            Expression::IntegerLiteral(0),
+            Expression::IntegerLiteral(128),
+            Expression::IntegerLiteral(5),
+        ];
+        for (i, identifier) in expected_expressions.iter().enumerate() {
+            let statment = &program.statments[i];
+            test_return_statment(identifier, statment);
         }
     }
 
@@ -151,6 +187,14 @@ mod tests {
             assert_eq!(identifier, name);
         } else {
             panic!("Not a let statment");
+        }
+    }
+
+    fn test_return_statment(expression: &Expression, statment: &Statment) {
+        if let Statment::Return(exp) = statment {
+            assert_eq!(expression, exp);
+        } else {
+            panic!("Not a return statment");
         }
     }
 }
