@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::ast::{Expression, Program, Statment};
 use crate::lexer::{Lexer, Token};
 
@@ -6,6 +8,8 @@ pub struct Parser {
     current_token: Token,
     peek_token: Token,
     parsing_errors: Vec<ParsingError>,
+    prefix_parse_functions: HashMap<Token, PrefixParserFn>,
+    infix_parse_functions: HashMap<Token, InfixParsern>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -13,8 +17,8 @@ pub enum ParsingError {
     ExpectedIdentifier(Token),
     ExpectedAssign(Token),
 }
-type prefixParserFn = fn(&mut Parser) -> Expression;
-type infixParserFn = fn(&mut Parser, Expression) -> Expression;
+type PrefixParserFn = fn(&mut Parser) -> Expression;
+type InfixParsern = fn(&mut Parser, Expression) -> Expression;
 
 impl Parser {
     pub fn new(lex: Lexer) -> Parser {
@@ -23,6 +27,8 @@ impl Parser {
             current_token: Token::Illegal,
             peek_token: Token::Illegal,
             parsing_errors: vec![],
+            prefix_parse_functions: HashMap::new(),
+            infix_parse_functions: HashMap::new(),
         };
         parser.next_token();
         parser.next_token();
