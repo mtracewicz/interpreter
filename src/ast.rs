@@ -1,5 +1,3 @@
-use crate::lexer::{Lexer, Token};
-
 pub enum Statment {
     Let(String, Expression),
     Return(Expression),
