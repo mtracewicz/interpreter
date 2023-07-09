@@ -9,6 +9,7 @@ pub enum Expression {
     IntegerLiteral(i32),
     Identifier(String),
     Prefix(String, Box<Expression>),
+    Infix(Box<Expression>, String, Box<Expression>),
 }
 
 pub enum Precedence {

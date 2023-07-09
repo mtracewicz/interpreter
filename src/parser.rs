@@ -267,6 +267,39 @@ mod tests {
     }
 
     #[test]
+    fn test_infix_parser() {
+        let inputs = [
+            ("5 + 5", 5, "+", 5),
+            ("5 - 5", 5, "-", 5),
+            ("5 * 5", 5, "*", 5),
+            ("5 / 5", 5, "/", 5),
+            ("5 < 5", 5, "<", 5),
+            ("5 > 5", 5, ">", 5),
+            ("5 == 5", 5, "==", 5),
+            ("5 != 5", 5, "!=", 5),
+        ];
+        for input in inputs.iter() {
+            let lexer = Lexer::new(String::from(input.0));
+            let mut parser = Parser::new(lexer);
+            let program = parser.parse_program();
+            assert_eq!(0, parser.parsing_errors.len());
+            assert_eq!(1, program.statments.len());
+            let statment = program.statments.first().unwrap().clone();
+            if let Statment::Expression(exp) = statment {
+                if let Expression::Infix(left, operator, right) = exp {
+                    assert_eq!(input.2, operator);
+                    test_integer_literal(left, input.1);
+                    test_integer_literal(right, input.3);
+                } else {
+                    panic!("Not an Infix Expression");
+                }
+            } else {
+                panic!("Not an expression!");
+            }
+        }
+    }
+
+    #[test]
     fn test_parser_errors() {
         let input = "
             let x = 5;
