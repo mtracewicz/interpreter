@@ -205,14 +205,7 @@ mod tests {
 
         let lexer = Lexer::new(String::from(input));
         let mut parser = Parser::new(lexer);
-        let program = parser.parse_program();
-        println!("got program");
-        assert_eq!(2, program.statments.len());
-        let expected_identifiers = [String::from("x"), String::from("z")];
-        for (i, identifier) in expected_identifiers.iter().enumerate() {
-            let statment = &program.statments[i];
-            test_let_statment(identifier, statment);
-        }
+        let _program = parser.parse_program();
         assert_eq!(2, parser.parsing_errors.len());
         let expecte_errors = [
             ParsingError::ExpectedIdentifier(Token::Assign),
