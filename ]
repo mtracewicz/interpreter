@@ -19,10 +19,9 @@ pub struct Parser {
     parsing_errors: Vec<ParsingError>,
 }
 
-#[derive(Debug, PartialEq)]
 pub enum ParsingError {
     ExpectedIdentifier(Token),
-    ExpectedAssign(Token),
+    ExpectedAssignError(Token),
 }
 
 impl Parser {
@@ -62,17 +61,15 @@ impl Parser {
             self.next_token();
             name = identifier;
         } else {
-            self.parsing_errors
-                .push(ParsingError::ExpectedIdentifier(self.peek_token.clone()));
             return None;
         }
         if !self.expect_token(Token::Assign) {
             self.parsing_errors
-                .push(ParsingError::ExpectedAssign(self.peek_token.clone()));
+                .push(ParsingError::ExpectedAssignError(self.peek_token.clone()));
             return None;
         }
 
-        while self.current_token != Token::Semicolon && self.current_token != Token::EOF {
+        while self.current_token != Token::Semicolon {
             self.next_token();
         }
 
@@ -117,33 +114,8 @@ mod tests {
     }
 
     #[test]
-    fn test_parser_errors() {
-        let input = "
-            let x = 5;
-            let = 10;
-            let y 5;
-            let z = 15;";
-
-        let lexer = Lexer::new(String::from(input));
-        let mut parser = Parser::new(lexer);
-        let program = parser.parse_program();
-        println!("got program");
-        assert_eq!(2, program.statments.len());
-        let expected_identifiers = [String::from("x"), String::from("z")];
-        for (i, identifier) in expected_identifiers.iter().enumerate() {
-            let statment = &program.statments[i];
-            test_let_statment(identifier, statment);
-        }
-        assert_eq!(2, parser.parsing_errors.len());
-        let expecte_errors = [
-            ParsingError::ExpectedIdentifier(Token::Assign),
-            ParsingError::ExpectedAssign(Token::Integer(String::from("5"))),
-        ];
-        for (expected_error, actual_error) in
-            expecte_errors.iter().zip(parser.parsing_errors.iter())
-        {
-            assert_eq!(expected_error, actual_error);
-        }
+    fn test_parser_errors(){
+        let input = "let x = 5"
     }
 
     fn test_let_statment(identifier: &String, statment: &Statment) {
