@@ -62,6 +62,12 @@ impl Lexer {
             b'}' => Token::RightBrace,
             b',' => Token::Comma,
             b';' => Token::Semicolon,
+            b'<' => Token::LessThen,
+            b'>' => Token::GreaterThen,
+            b'-' => Token::Minus,
+            b'!' => Token::Bang,
+            b'*' => Token::Asterisk,
+            b'/' => Token::Slash,
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => return self.read_identifier(),
             b'0'..=b'9' => return self.read_integer(),
             0 => Token::EOF,
@@ -80,6 +86,11 @@ impl Lexer {
         return match identifier.as_str() {
             "let" => Token::Let,
             "fn" => Token::Function,
+            "return" => Token::Return,
+            "true" => Token::True,
+            "false" => Token::False,
+            "if" => Token::If,
+            "else" => Token::Else,
             _ => Token::Identifier(identifier),
         };
     }
