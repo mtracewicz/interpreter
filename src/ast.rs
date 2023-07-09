@@ -9,6 +9,7 @@ pub enum Statment {
 #[derive(Debug, PartialEq)]
 pub enum Expression {
     IntegerLiteral(i32),
+    Identifier(String),
 }
 
 pub struct Program {

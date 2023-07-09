@@ -148,6 +148,24 @@ mod tests {
     }
 
     #[test]
+    fn test_identifier_parser() {
+        let input = "foobar";
+        let lexer = Lexer::new(String::from(input));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(0, parser.parsing_errors.len());
+        assert_eq!(1, program.statments.len());
+        let statment = program.statments.first().unwrap().clone();
+        if let Statment::Expression(exp) = statment {
+            if let Expression::Identifier(name) = exp {
+                assert_eq!("foobar", name);
+            }
+        } else {
+            panic!("Not an expression!");
+        }
+    }
+
+    #[test]
     fn test_parser_errors() {
         let input = "
             let x = 5;
