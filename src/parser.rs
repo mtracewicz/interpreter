@@ -214,11 +214,40 @@ mod tests {
         assert_eq!(1, program.statments.len());
         let statment = program.statments.first().unwrap().clone();
         if let Statment::Expression(exp) = statment {
-            if let Expression::IntegerLiteral(value) = exp {
-                assert_eq!(5, *value);
-            }
+            test_integer_literal(exp, 5)
         } else {
             panic!("Not an expression!");
+        }
+    }
+
+    fn test_integer_literal(expression: &Expression, desired_value: i32) {
+        if let Expression::IntegerLiteral(value) = expression {
+            assert_eq!(desired_value, *value);
+        } else {
+            panic!("Not an Integer Literal");
+        }
+    }
+
+    #[test]
+    fn test_prefix_parser() {
+        let inputs = [("!5", "!", 5), ("-15", "-", 15)];
+        for input in inputs.iter() {
+            let lexer = Lexer::new(String::from(input.0));
+            let mut parser = Parser::new(lexer);
+            let program = parser.parse_program();
+            assert_eq!(0, parser.parsing_errors.len());
+            assert_eq!(1, program.statments.len());
+            let statment = program.statments.first().unwrap().clone();
+            if let Statment::Expression(exp) = statment {
+                if let Expression::Prefix(operator, right) = exp {
+                    assert_eq!(input.1, operator);
+                    test_integer_literal(right, input.2);
+                } else {
+                    panic!("Not a Prefix Expression");
+                }
+            } else {
+                panic!("Not an expression!");
+            }
         }
     }
 

@@ -10,6 +10,7 @@ pub enum Statment {
 pub enum Expression {
     IntegerLiteral(i32),
     Identifier(String),
+    Prefix(String, Box<Expression>),
 }
 
 pub enum Precedence {
