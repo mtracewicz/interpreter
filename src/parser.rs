@@ -1,4 +1,4 @@
-use crate::ast::{Expression, Precedence, Program, Statment};
+use crate::ast::{get_token_precedence, Expression, Precedence, Program, Statment};
 use crate::lexer::{Lexer, Token};
 
 pub struct Parser {
@@ -14,7 +14,7 @@ pub enum ParsingError {
     ExpectedAssign(Token),
 }
 type PrefixParserFn = fn(&mut Parser) -> Expression;
-type InfixParsern = fn(&mut Parser, Expression) -> Expression;
+type InfixParserFn = fn(&mut Parser, Expression) -> Expression;
 
 impl Parser {
     pub fn new(lex: Lexer) -> Parser {
@@ -96,20 +96,61 @@ impl Parser {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Option<Expression> {
-        if let Some(prefix) = self.prefix_parse_functions() {
+        let left = if let Some(prefix) = Parser::prefix_parse_functions(&self.current_token) {
             Some(prefix(self))
+        } else {
+            None
+        };
+        if let Some(mut left_expression) = left {
+            while self.peek_token != Token::Semicolon
+                && precedence < get_token_precedence(&self.peek_token)
+            {
+                let infix_fn = Parser::infix_parse_function(&self.peek_token);
+                if let Some(f) = infix_fn {
+                    self.next_token();
+                    left_expression = f(self, left_expression);
+                } else {
+                    return Some(left_expression);
+                }
+            }
+            return Some(left_expression);
         } else {
             None
         }
     }
 
-    fn prefix_parse_functions(&self) -> Option<PrefixParserFn> {
-        match &self.current_token {
+    fn prefix_parse_functions(token: &Token) -> Option<PrefixParserFn> {
+        match token {
             Token::Identifier(_name) => Some(Parser::parse_identifier),
             Token::Integer(_) => Some(Parser::parse_integer_literal),
             Token::Bang | Token::Minus => Some(Parser::parse_prefix_expression),
             _ => None,
         }
+    }
+
+    fn infix_parse_function(token: &Token) -> Option<InfixParserFn> {
+        match token {
+            Token::Plus
+            | Token::Minus
+            | Token::Asterisk
+            | Token::Slash
+            | Token::LessThen
+            | Token::GreaterThen
+            | Token::Equal
+            | Token::NotEqual => Some(Parser::parse_infix_expression),
+            _ => None,
+        }
+    }
+
+    fn parse_infix_expression(&mut self, left: Expression) -> Expression {
+        let precendence = get_token_precedence(&self.current_token);
+        let operator = self.current_token.to_string();
+        self.next_token();
+        Expression::Infix(
+            Box::new(left),
+            operator,
+            Box::new(self.parse_expression(precendence).unwrap()),
+        )
     }
 
     fn parse_identifier(&mut self) -> Expression {
