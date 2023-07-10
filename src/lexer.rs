@@ -1,4 +1,4 @@
-use std::usize;
+use std::{fmt::Display, usize};
 
 #[allow(dead_code)]
 #[derive(Debug, PartialEq, Clone)]
@@ -30,6 +30,25 @@ pub enum Token {
     Return,
     Equal,
     NotEqual,
+}
+
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Illegal => write!(f, "ILLEGAL"),
+            Token::EOF => write!(f, "EOF"),
+            Token::Plus => write!(f, "+"),
+            Token::Minus => write!(f, "-"),
+            Token::Equal => write!(f, "=="),
+            Token::NotEqual => write!(f, "!="),
+            Token::Asterisk => write!(f, "*"),
+            Token::Slash => write!(f, "/"),
+            Token::LessThen => write!(f, "<"),
+            Token::GreaterThen => write!(f, ">"),
+            Token::Integer(int) => write!(f, "{}", int),
+            _ => panic!("This should never happen!"),
+        }
+    }
 }
 
 pub struct Lexer {
