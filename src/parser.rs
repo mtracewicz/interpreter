@@ -363,6 +363,34 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_precedence() {
+        let inputs = vec![
+            ("-a * b", "((-a) * b)"),
+            ("!-a", "(!(-a))"),
+            ("a + b + c", "((a + b) + c)"),
+            ("a + b - c", "((a + b) - c)"),
+            ("a * b * c", "((a * b) * c)"),
+            ("a * b / c", "((a * b) / c)"),
+            ("a + b / c", "(a + (b / c))"),
+            ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+            ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
+            ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+            ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+            (
+                "3 + 4 * 5 == 3 * 1 + 4 * 5",
+                "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            ),
+        ];
+        for input in inputs.iter() {
+            let lexer = Lexer::new(String::from(input.0));
+            let mut parser = Parser::new(lexer);
+            let program = parser.parse_program();
+            assert_eq!(0, parser.parsing_errors.len());
+            assert_eq!(input.1, program.to_string());
+        }
+    }
+
     fn test_let_statment(identifier: &String, statment: &Statment) {
         if let Statment::Let(name, _exp) = statment {
             assert_eq!(identifier, name);

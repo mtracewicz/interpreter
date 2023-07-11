@@ -12,10 +12,10 @@ impl Display for Statment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Statment::Let(identifier, expression) => {
-                write!(f, "let {} = {:?};", identifier, expression)
+                write!(f, "let {} = {};", identifier, expression)
             }
-            Statment::Return(expression) => write!(f, "return {:?};", expression),
-            Statment::Expression(expression) => write!(f, "Expression: {:?};", expression),
+            Statment::Return(expression) => write!(f, "return {};", expression),
+            Statment::Expression(expression) => write!(f, "{}", expression),
         }
     }
 }
@@ -26,6 +26,17 @@ pub enum Expression {
     Identifier(String),
     Prefix(String, Box<Expression>),
     Infix(Box<Expression>, String, Box<Expression>),
+}
+
+impl Display for Expression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Expression::IntegerLiteral(i) => write!(f, "{}", i),
+            Expression::Prefix(op, exp) => write!(f, "({}{})", op, exp),
+            Expression::Infix(l, o, r) => write!(f, "({} {} {})", l, o, r),
+            Expression::Identifier(i) => write!(f, "{}", i),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -46,7 +57,7 @@ pub struct Program {
 impl Display for Program {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.statments.iter().for_each(|statment| {
-            writeln!(f, "{}", statment).unwrap();
+            write!(f, "{}", statment).unwrap();
         });
         Ok(())
     }
