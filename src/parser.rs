@@ -1,4 +1,6 @@
-use crate::ast::{get_token_precedence, Expression, Precedence, Program, Statment};
+use crate::ast::{
+    get_token_precedence, Expression, InfixOperator, Precedence, PrefixOeprator, Program, Statment,
+};
 use crate::lexer::{Lexer, Token};
 
 pub struct Parser {
@@ -144,7 +146,7 @@ impl Parser {
 
     fn parse_infix_expression(&mut self, left: Expression) -> Expression {
         let precendence = get_token_precedence(&self.current_token);
-        let operator = self.current_token.to_string();
+        let operator = InfixOperator::from(&self.current_token);
         self.next_token();
         Expression::Infix(
             Box::new(left),
@@ -170,11 +172,7 @@ impl Parser {
     }
 
     fn parse_prefix_expression(&mut self) -> Expression {
-        let operator = if let Token::Bang = self.current_token {
-            String::from("!")
-        } else {
-            String::from('-')
-        };
+        let operator = PrefixOeprator::from(&self.current_token);
         self.next_token();
         if let Some(exp) = self.parse_expression(Precedence::Prefix) {
             Expression::Prefix(operator, Box::new(exp))
@@ -296,7 +294,7 @@ mod tests {
             let statment = program.statments.first().unwrap().clone();
             if let Statment::Expression(exp) = statment {
                 if let Expression::Prefix(operator, right) = exp {
-                    assert_eq!(input.1, operator);
+                    assert_eq!(input.1, operator.to_string());
                     test_integer_literal(right, input.2);
                 } else {
                     panic!("Not a Prefix Expression");
@@ -328,7 +326,7 @@ mod tests {
             let statment = program.statments.first().unwrap().clone();
             if let Statment::Expression(exp) = statment {
                 if let Expression::Infix(left, operator, right) = exp {
-                    assert_eq!(input.2, operator);
+                    assert_eq!(input.2, operator.to_string());
                     test_integer_literal(left, input.1);
                     test_integer_literal(right, input.3);
                 } else {
