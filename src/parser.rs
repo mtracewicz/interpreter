@@ -173,7 +173,20 @@ impl Parser {
                 .push(ParsingError::ExpectedLeftBrace(self.current_token.clone()));
             panic!("Did not find left brace");
         };
-        return Expression::If(Box::new(condition), self.parse_block_statment(), None);
+        let consequence = self.parse_block_statment();
+
+        let alternative = if self.peek_token == Token::Else {
+            self.next_token();
+            if !self.expect_token(Token::LeftBrace) {
+                panic!("Not a left brace");
+            } else {
+                Some(self.parse_block_statment())
+            }
+        } else {
+            None
+        };
+
+        return Expression::If(Box::new(condition), consequence, alternative);
     }
 
     fn parse_block_statment(&mut self) -> BlockStatment {
@@ -326,8 +339,9 @@ mod tests {
                     panic!("Missing alternative.");
                 }
             }
+        } else {
+            panic!("Not an expression.");
         }
-        panic!("Not an if expression.");
     }
 
     #[test]
