@@ -125,6 +125,7 @@ impl Parser {
         match token {
             Token::Identifier(_name) => Some(Parser::parse_identifier),
             Token::Integer(_) => Some(Parser::parse_integer_literal),
+            Token::True | Token::False => Some(Parser::parse_bool_literal),
             Token::Bang | Token::Minus => Some(Parser::parse_prefix_expression),
             _ => None,
         }
@@ -167,7 +168,15 @@ impl Parser {
         if let Token::Integer(value) = self.current_token.clone() {
             Expression::IntegerLiteral(value.parse::<i32>().unwrap())
         } else {
-            panic!("Parse identifier called not on an identifier")
+            panic!("Parse int called not on an int")
+        }
+    }
+
+    fn parse_bool_literal(&mut self) -> Expression {
+        match self.current_token {
+            Token::True => Expression::Boolean(true),
+            Token::False => Expression::Boolean(false),
+            _ => panic!("Parse bool called not on a bool"),
         }
     }
 
