@@ -36,6 +36,7 @@ impl Display for Statment {
 #[derive(Debug, PartialEq)]
 pub enum Expression {
     IntegerLiteral(i32),
+    Boolean(bool),
     Identifier(String),
     Prefix(PrefixOeprator, Box<Expression>),
     Infix(Box<Expression>, InfixOperator, Box<Expression>),
@@ -45,6 +46,7 @@ impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Expression::IntegerLiteral(i) => write!(f, "{}", i),
+            Expression::Boolean(b) => write!(f, "{}", b),
             Expression::Prefix(op, exp) => write!(f, "({}{})", op, exp),
             Expression::Infix(l, o, r) => write!(f, "({} {} {})", l, o, r),
             Expression::Identifier(i) => write!(f, "{}", i),

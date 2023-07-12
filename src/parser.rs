@@ -273,6 +273,31 @@ mod tests {
             panic!("Not an expression!");
         }
     }
+    #[test]
+    fn test_bool_literal_parser() {
+        let input = "true; false;";
+        let expected_output = [true, false];
+        let lexer = Lexer::new(String::from(input));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(0, parser.parsing_errors.len());
+        assert_eq!(2, program.statments.len());
+        for (statment, desired_value) in program.statments.iter().zip(expected_output) {
+            if let Statment::Expression(exp) = statment {
+                test_bool_literal_expression(exp, desired_value);
+            } else {
+                panic!("Not an expression!");
+            }
+        }
+    }
+
+    fn test_bool_literal_expression(expression: &Expression, desired_value: bool) {
+        if let Expression::Boolean(value) = expression {
+            assert_eq!(desired_value, *value);
+        } else {
+            panic!("Not a boolean expression");
+        }
+    }
 
     fn test_integer_literal(expression: &Expression, desired_value: i32) {
         if let Expression::IntegerLiteral(value) = expression {
