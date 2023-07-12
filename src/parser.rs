@@ -127,6 +127,7 @@ impl Parser {
             Token::Integer(_) => Some(Parser::parse_integer_literal),
             Token::True | Token::False => Some(Parser::parse_bool_literal),
             Token::Bang | Token::Minus => Some(Parser::parse_prefix_expression),
+            Token::LeftParenthesis => Some(Parser::parse_grouped_expression),
             _ => None,
         }
     }
@@ -143,6 +144,18 @@ impl Parser {
             | Token::NotEqual => Some(Parser::parse_infix_expression),
             _ => None,
         }
+    }
+
+    fn parse_grouped_expression(&mut self) -> Expression {
+        self.next_token();
+        if let Some(exp) = self.parse_expression(Precedence::Lowest) {
+            if self.peek_token != Token::RightParenthesis {
+                panic!("Never closed the parenthesis");
+            }
+            self.next_token();
+            return exp;
+        }
+        panic!("Error parsing a grouped expression");
     }
 
     fn parse_infix_expression(&mut self, left: Expression) -> Expression {
@@ -444,6 +457,11 @@ mod tests {
             ("true", "true"),
             ("false", "false"),
             ("3 > 5 == false", "((3 > 5) == false)"),
+            ("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"),
+            ("(5 + 5) * 2", "((5 + 5) * 2)"),
+            ("2 / (5 + 5)", "(2 / (5 + 5))"),
+            ("-(5 + 5)", "(-(5 + 5))"),
+            ("!(true == true)", "(!(true == true))"),
             ("3 < 5 == true", "((3 < 5) == true)"),
         ];
         for input in inputs.iter() {

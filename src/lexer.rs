@@ -46,6 +46,8 @@ impl Display for Token {
             Token::LessThen => write!(f, "<"),
             Token::GreaterThen => write!(f, ">"),
             Token::Integer(int) => write!(f, "{}", int),
+            Token::LeftParenthesis => write!(f, "("),
+            Token::RightParenthesis => write!(f, ")"),
             _ => panic!("This should never happen!"),
         }
     }
