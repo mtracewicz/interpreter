@@ -15,6 +15,21 @@ impl Display for Program {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct BlockStatment {
+    pub statments: Vec<Statment>,
+}
+
+impl Display for BlockStatment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.statments.iter().for_each(|statment| {
+            write!(f, "{}", statment).unwrap();
+        });
+        Ok(())
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Statment {
     Let(String, Expression),
     Return(Expression),
@@ -40,6 +55,7 @@ pub enum Expression {
     Identifier(String),
     Prefix(PrefixOeprator, Box<Expression>),
     Infix(Box<Expression>, InfixOperator, Box<Expression>),
+    If(Box<Expression>, BlockStatment, Option<BlockStatment>),
 }
 
 impl Display for Expression {
@@ -50,6 +66,13 @@ impl Display for Expression {
             Expression::Prefix(op, exp) => write!(f, "({}{})", op, exp),
             Expression::Infix(l, o, r) => write!(f, "({} {} {})", l, o, r),
             Expression::Identifier(i) => write!(f, "{}", i),
+            Expression::If(condition, consequence, alternative) => {
+                if let Some(alternative) = alternative {
+                    write!(f, "if {}  {} else {}", condition, consequence, alternative)
+                } else {
+                    write!(f, "if {} {}", condition, consequence)
+                }
+            }
         }
     }
 }

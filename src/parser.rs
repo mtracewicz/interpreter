@@ -1,5 +1,6 @@
 use crate::ast::{
-    get_token_precedence, Expression, InfixOperator, Precedence, PrefixOeprator, Program, Statment,
+    get_token_precedence, BlockStatment, Expression, InfixOperator, Precedence, PrefixOeprator,
+    Program, Statment,
 };
 use crate::lexer::{Lexer, Token};
 
@@ -14,6 +15,9 @@ pub struct Parser {
 pub enum ParsingError {
     ExpectedIdentifier(Token),
     ExpectedAssign(Token),
+    ExpectedLeftParenthesis(Token),
+    ExpectedRightParenthesis(Token),
+    ExpectedLeftBrace(Token),
 }
 type PrefixParserFn = fn(&mut Parser) -> Expression;
 type InfixParserFn = fn(&mut Parser, Expression) -> Expression;
@@ -128,6 +132,7 @@ impl Parser {
             Token::True | Token::False => Some(Parser::parse_bool_literal),
             Token::Bang | Token::Minus => Some(Parser::parse_prefix_expression),
             Token::LeftParenthesis => Some(Parser::parse_grouped_expression),
+            Token::If => Some(Parser::parse_if_expression),
             _ => None,
         }
     }
@@ -146,14 +151,58 @@ impl Parser {
         }
     }
 
+    fn parse_if_expression(&mut self) -> Expression {
+        if !self.expect_token(Token::LeftParenthesis) {
+            self.parsing_errors
+                .push(ParsingError::ExpectedLeftParenthesis(
+                    self.current_token.clone(),
+                ));
+            panic!("Did not find left parenthesis");
+        };
+        self.next_token();
+        let condition = self.parse_expression(Precedence::Lowest).unwrap();
+        if !self.expect_token(Token::RightParenthesis) {
+            self.parsing_errors
+                .push(ParsingError::ExpectedRightParenthesis(
+                    self.current_token.clone(),
+                ));
+            panic!("Did not find right parenthesis");
+        };
+        if !self.expect_token(Token::LeftBrace) {
+            self.parsing_errors
+                .push(ParsingError::ExpectedLeftBrace(self.current_token.clone()));
+            panic!("Did not find left brace");
+        };
+        return Expression::If(Box::new(condition), self.parse_block_statment(), None);
+    }
+
+    fn parse_block_statment(&mut self) -> BlockStatment {
+        let mut block_statment = BlockStatment { statments: vec![] };
+        self.next_token();
+        while self.current_token != Token::RightBrace && self.current_token != Token::EOF {
+            let statment = self.parse_statment();
+            if let Some(statment) = statment {
+                block_statment.statments.push(statment);
+            }
+
+            self.next_token();
+        }
+
+        return block_statment;
+    }
+
     fn parse_grouped_expression(&mut self) -> Expression {
         self.next_token();
         if let Some(exp) = self.parse_expression(Precedence::Lowest) {
-            if self.peek_token != Token::RightParenthesis {
-                panic!("Never closed the parenthesis");
+            if self.expect_token(Token::RightParenthesis) {
+                return exp;
+            } else {
+                self.parsing_errors
+                    .push(ParsingError::ExpectedRightParenthesis(
+                        self.current_token.clone(),
+                    ));
+                panic!("Did not find right parenthesis");
             }
-            self.next_token();
-            return exp;
         }
         panic!("Error parsing a grouped expression");
     }
@@ -238,6 +287,47 @@ mod tests {
             let statment = &program.statments[i];
             test_let_statment(identifier, statment);
         }
+    }
+
+    #[test]
+    fn test_if_statment() {
+        let input = "if (x < y) {x}";
+        let lexer = Lexer::new(String::from(input));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(0, parser.parsing_errors.len());
+        assert_eq!(1, program.statments.len());
+        if let Statment::Expression(exp) = program.statments.first().unwrap() {
+            if let Expression::If(condition, consequence, alternative) = exp {
+                assert_eq!("(x < y)", condition.to_string());
+                assert_eq!("x", consequence.to_string());
+                assert!(!alternative.is_some())
+            }
+        } else {
+            panic!("Not a statment expression.");
+        }
+    }
+
+    #[test]
+    fn test_if_else_statment() {
+        let input = "if (x < y) {x} else {y}";
+        let lexer = Lexer::new(String::from(input));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(0, parser.parsing_errors.len());
+        assert_eq!(1, program.statments.len());
+        if let Statment::Expression(exp) = program.statments.first().unwrap() {
+            if let Expression::If(condition, consequence, alternative) = exp {
+                assert_eq!("(x < y)", condition.to_string());
+                assert_eq!("x", consequence.to_string());
+                if let Some(alternative) = alternative {
+                    assert_eq!("y", alternative.to_string());
+                } else {
+                    panic!("Missing alternative.");
+                }
+            }
+        }
+        panic!("Not an if expression.");
     }
 
     #[test]
