@@ -70,23 +70,23 @@ impl Parser {
             return None;
         }
 
+        self.next_token();
+        let value = self.parse_expression(Precedence::Lowest).unwrap();
         while self.current_token != Token::Semicolon && self.current_token != Token::EOF {
             self.next_token();
         }
 
-        Some(Statment::Let(name, Expression::IntegerLiteral(5)))
+        Some(Statment::Let(name, value))
     }
 
     fn parse_return_statment(&mut self) -> Option<Statment> {
-        let literal = match self.peek_token.clone() {
-            Token::Integer(i) => i.parse::<i32>().unwrap(),
-            _ => 0,
-        };
+        self.next_token();
+        let literal = self.parse_expression(Precedence::Lowest).unwrap();
         while self.current_token != Token::Semicolon && self.current_token != Token::EOF {
             self.next_token();
         }
 
-        Some(Statment::Return(Expression::IntegerLiteral(literal)))
+        Some(Statment::Return(literal))
     }
 
     fn parse_expression_statement(&mut self) -> Option<Statment> {
@@ -358,17 +358,22 @@ mod tests {
     fn test_let_parser() {
         let input = "
         let x = 5;
-        let y = 10;
-        let foobar = 838383;";
+        let y = true;
+        let foobar = y;";
 
         let lexer = Lexer::new(String::from(input));
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program();
+        println!("{:?}", parser.parsing_errors);
         assert_eq!(3, program.statments.len());
-        let expected_identifiers = [String::from("x"), String::from("y"), String::from("foobar")];
-        for (i, identifier) in expected_identifiers.iter().enumerate() {
+        let expected_values = [
+            (String::from("x"), "5"),
+            (String::from("y"), "true"),
+            (String::from("foobar"), "y"),
+        ];
+        for (i, value) in expected_values.iter().enumerate() {
             let statment = &program.statments[i];
-            test_let_statment(identifier, statment);
+            test_let_statment(&(&value.0, value.1), statment);
         }
     }
 
@@ -734,9 +739,10 @@ mod tests {
         }
     }
 
-    fn test_let_statment(identifier: &String, statment: &Statment) {
-        if let Statment::Let(name, _exp) = statment {
-            assert_eq!(identifier, name);
+    fn test_let_statment(value: &(&String, &str), statment: &Statment) {
+        if let Statment::Let(name, exp) = statment {
+            assert_eq!(value.0, name);
+            assert_eq!(value.1, exp.to_string());
         } else {
             panic!("Not a let statment");
         }
