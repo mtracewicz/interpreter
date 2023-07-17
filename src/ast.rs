@@ -57,6 +57,7 @@ pub enum Expression {
     Infix(Box<Expression>, InfixOperator, Box<Expression>),
     If(Box<Expression>, BlockStatment, Option<BlockStatment>),
     Function(Vec<Expression>, BlockStatment),
+    Call(Box<Expression>, Vec<Expression>),
 }
 
 impl Display for Expression {
@@ -75,19 +76,21 @@ impl Display for Expression {
                 }
             }
             Expression::Function(params, body) => {
-                write!(
-                    f,
-                    "fn({}) {}",
-                    params
-                        .iter()
-                        .map(|p| p.to_string())
-                        .collect::<Vec<String>>()
-                        .join(","),
-                    body
-                )
+                write!(f, "fn({}) {}", get_comma_separated(params), body)
+            }
+            Expression::Call(function, arguments) => {
+                write!(f, "{}({})", function, get_comma_separated(arguments))
             }
         }
     }
+}
+
+fn get_comma_separated(expressions: &[Expression]) -> String {
+    expressions
+        .iter()
+        .map(|exp| exp.to_string())
+        .collect::<Vec<String>>()
+        .join(", ")
 }
 
 #[derive(Debug, PartialEq)]
@@ -179,6 +182,7 @@ pub fn get_token_precedence(token: &Token) -> Precedence {
         Token::Plus => Precedence::Sum,
         Token::Slash => Precedence::Product,
         Token::Asterisk => Precedence::Product,
+        Token::LeftParenthesis => Precedence::Call,
         _ => Precedence::Lowest,
     }
 }

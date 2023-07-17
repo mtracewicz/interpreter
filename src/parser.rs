@@ -148,8 +148,35 @@ impl Parser {
             | Token::GreaterThen
             | Token::Equal
             | Token::NotEqual => Some(Parser::parse_infix_expression),
+            Token::LeftParenthesis => Some(Parser::parse_call_expression),
             _ => None,
         }
+    }
+    fn parse_call_expression(&mut self, left: Expression) -> Expression {
+        Expression::Call(Box::new(left), self.parse_call_arguments())
+    }
+
+    fn parse_call_arguments(&mut self) -> Vec<Expression> {
+        let mut args = vec![];
+        if self.peek_token == Token::RightParenthesis {
+            self.next_token();
+            return args;
+        }
+        self.next_token();
+
+        args.push(self.parse_expression(Precedence::Lowest).unwrap());
+
+        while self.peek_token == Token::Comma {
+            self.next_token();
+            self.next_token();
+            args.push(self.parse_expression(Precedence::Lowest).unwrap());
+        }
+
+        if !self.expect_token(Token::RightParenthesis) {
+            panic!("Missing right parsenthesis");
+        }
+
+        return args;
     }
 
     fn parse_function_expression(&mut self) -> Expression {
@@ -514,6 +541,30 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_call_parsing() {
+        let input = "add(1, 2*2, 3+4)";
+        let lexer = Lexer::new(String::from(input));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(1, program.statments.len());
+        if let Statment::Expression(ex) = program.statments.first().unwrap().clone() {
+            if let Expression::Call(function, args) = ex {
+                assert_eq!(3, args.len());
+                assert_eq!("1", args[0].to_string());
+                assert_eq!("(2 * 2)", args[1].to_string());
+                assert_eq!("(3 + 4)", args[2].to_string());
+                if **function != Expression::Identifier(String::from("add")) {
+                    panic!("Not an identifier");
+                }
+            } else {
+                panic!("Not a call Expression");
+            }
+        } else {
+            panic!("Not a statment");
+        }
+    }
+
     fn test_bool_literal_expression(expression: &Expression, desired_value: bool) {
         if let Expression::Boolean(value) = expression {
             assert_eq!(desired_value, *value);
@@ -664,6 +715,15 @@ mod tests {
             ("-(5 + 5)", "(-(5 + 5))"),
             ("!(true == true)", "(!(true == true))"),
             ("3 < 5 == true", "((3 < 5) == true)"),
+            ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
+            (
+                "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+                "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+            ),
+            (
+                "add(a + b + c * d / f + g)",
+                "add((((a + b) + ((c * d) / f)) + g))",
+            ),
         ];
         for input in inputs.iter() {
             let lexer = Lexer::new(String::from(input.0));
