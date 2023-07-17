@@ -4,7 +4,8 @@ mod lexer;
 mod parser;
 use std::{io::Write, process::exit};
 
-use crate::lexer::{Lexer, Token};
+use crate::lexer::Lexer;
+use crate::parser::Parser;
 
 fn main() {
     let prompt = ">> ";
@@ -17,13 +18,10 @@ fn main() {
             if line == "exit" {
                 exit(0);
             }
-            let mut lex = Lexer::new(line);
-            while let Ok(token) = lex.next_token() {
-                println!("{:?}", token);
-                if token == Token::EOF {
-                    break;
-                }
-            }
+            let lex = Lexer::new(line);
+            let mut parser = Parser::new(lex);
+            let program = parser.parse_program();
+            println!("{}", program);
             print!("{}", prompt);
             std::io::stdout().flush().unwrap();
         }
