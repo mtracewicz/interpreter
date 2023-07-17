@@ -133,6 +133,7 @@ impl Parser {
             Token::Bang | Token::Minus => Some(Parser::parse_prefix_expression),
             Token::LeftParenthesis => Some(Parser::parse_grouped_expression),
             Token::If => Some(Parser::parse_if_expression),
+            Token::Function => Some(Parser::parse_function_expression),
             _ => None,
         }
     }
@@ -149,6 +150,48 @@ impl Parser {
             | Token::NotEqual => Some(Parser::parse_infix_expression),
             _ => None,
         }
+    }
+
+    fn parse_function_expression(&mut self) -> Expression {
+        if !self.expect_token(Token::LeftParenthesis) {
+            panic!("Not a left parenthesis.");
+        }
+        let params = self.parse_parameters();
+        if !self.expect_token(Token::LeftBrace) {
+            panic!("Not a left brace.");
+        }
+        let body = self.parse_block_statment();
+        return Expression::Function(params, body);
+    }
+
+    fn parse_parameters(&mut self) -> Vec<Expression> {
+        let mut params = vec![];
+        if self.peek_token == Token::RightParenthesis {
+            self.next_token();
+            return params;
+        }
+        self.next_token();
+
+        if let Token::Identifier(name) = self.current_token.clone() {
+            params.push(Expression::Identifier(name));
+        } else {
+            panic!("Expected an identifier");
+        }
+
+        while self.peek_token == Token::Comma {
+            self.next_token();
+            self.next_token();
+            if let Token::Identifier(name) = self.current_token.clone() {
+                params.push(Expression::Identifier(name));
+            } else {
+                panic!("Expected an identifier");
+            }
+        }
+
+        if !self.expect_token(Token::RightParenthesis) {
+            panic!("Missing right parsenthesis");
+        }
+        return params;
     }
 
     fn parse_if_expression(&mut self) -> Expression {
@@ -399,6 +442,7 @@ mod tests {
             panic!("Not an expression!");
         }
     }
+
     #[test]
     fn test_bool_literal_parser() {
         let input = "true; false;";
@@ -413,6 +457,59 @@ mod tests {
                 test_bool_literal_expression(exp, desired_value);
             } else {
                 panic!("Not an expression!");
+            }
+        }
+    }
+
+    #[test]
+    fn test_function_literal_parser() {
+        let input = "fn(x,y){ x+y; }";
+        let lexer = Lexer::new(String::from(input));
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert_eq!(0, parser.parsing_errors.len());
+        assert_eq!(1, program.statments.len());
+        if let Statment::Expression(ex) = program.statments.first().unwrap().clone() {
+            if let Expression::Function(params, body) = ex {
+                assert_eq!(2, params.len());
+                assert_eq!("x", params[0].to_string());
+                assert_eq!("y", params[1].to_string());
+                assert_eq!(1, body.statments.len());
+                assert_eq!("(x + y)", body.statments.first().unwrap().to_string());
+            }
+        } else {
+            panic!("Not an expression");
+        }
+    }
+
+    #[test]
+    fn test_params_parseing() {
+        let inputs = [
+            ("fn(){}", vec![]),
+            ("fn(x){}", vec!["x"]),
+            ("fn(x,y){}", vec!["x", "y"]),
+            ("fn(x,y,z){}", vec!["x", "y", "z"]),
+        ];
+        for input in inputs {
+            let lexer = Lexer::new(String::from(input.0));
+            let mut parser = Parser::new(lexer);
+            let program = parser.parse_program();
+            assert_eq!(1, program.statments.len());
+            if let Statment::Expression(ex) = program.statments.first().unwrap().clone() {
+                if let Expression::Function(params, _body) = ex {
+                    assert_eq!(input.1.len(), params.len());
+                    for (expected, actuall) in input.1.iter().zip(params.iter()) {
+                        if let Expression::Identifier(name) = actuall {
+                            assert_eq!(expected, name);
+                        } else {
+                            panic!("Not an identifier");
+                        }
+                    }
+                } else {
+                    panic!("Not a function Expression");
+                }
+            } else {
+                panic!("Not a statment");
             }
         }
     }

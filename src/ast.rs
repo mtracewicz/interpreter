@@ -56,6 +56,7 @@ pub enum Expression {
     Prefix(PrefixOeprator, Box<Expression>),
     Infix(Box<Expression>, InfixOperator, Box<Expression>),
     If(Box<Expression>, BlockStatment, Option<BlockStatment>),
+    Function(Vec<Expression>, BlockStatment),
 }
 
 impl Display for Expression {
@@ -72,6 +73,18 @@ impl Display for Expression {
                 } else {
                     write!(f, "if {} {}", condition, consequence)
                 }
+            }
+            Expression::Function(params, body) => {
+                write!(
+                    f,
+                    "fn({}) {}",
+                    params
+                        .iter()
+                        .map(|p| p.to_string())
+                        .collect::<Vec<String>>()
+                        .join(","),
+                    body
+                )
             }
         }
     }
